@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="parcial.AppTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-03-16T17:41:37" hostname="LAPTOP-A36R5UHB" time="0.015">
+<testsuite name="parcial.AppTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-03-16T18:44:59" hostname="LAPTOP-A36R5UHB" time="0.015">
   <properties/>
   <testcase name="appHasAGreeting()" classname="parcial.AppTest" time="0.015"/>
   <system-out><![CDATA[]]></system-out>

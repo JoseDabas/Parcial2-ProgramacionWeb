@@ -1,4 +1,4 @@
-//1. Crear una función para obtener todos los registros de la IndexedDB.
+// 1. Crear una función para obtener todos los registros de la IndexedDB.
 function getAllRecords() {
     return new Promise((resolve, reject) => {
         let transaction = db.transaction(['encuestas'], 'readonly');
@@ -97,7 +97,6 @@ async function displayRecords() {
     });
 }
 
-
 // 3. Crear funciones para manejar las acciones de editar y borrar.
 function editRecord(id) {
     let transaction = db.transaction(['encuestas'], 'readonly');
@@ -123,6 +122,7 @@ function deleteRecord(id) {
         console.log('El id del registro a borrar no es un número válido');
         return;
     }
+    // Guardar el id del registro a borrar en un atributo de datos del botón de confirmación
     let confirmDeleteButton = document.getElementById('confirmDeleteButton');
     if (confirmDeleteButton) {
         confirmDeleteButton.dataset.recordId = id;
@@ -132,7 +132,7 @@ function deleteRecord(id) {
     }
 }
 
-// 4. Funciones para sincronizar con el servidor
+// 4. Crear un botón para sincronizar los datos con el servidor.
 let syncButton = document.getElementById('syncButton');
 syncButton.onclick = function () {
     syncWithServer();
@@ -140,7 +140,6 @@ syncButton.onclick = function () {
 
 var webSocket;
 //var tiempoReconectar = 5000;
-
 
 async function syncWithServer() {
     let records = await getAllRecords();
@@ -160,42 +159,18 @@ async function syncWithServer() {
     });*/
 }
 
-
 function conectar(records) {
-    //Cambiado a wss
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const wsUrl = protocol + location.hostname + (location.port ? ':' + location.port : '') + "/encuesta/sincronizar";
-    
-    console.log("Protocolo detectado:", protocol);
-    console.log("Hostname:", location.hostname);
-    console.log("Puerto:", location.port);
-    console.log("Intentando conectar a WebSocket:", wsUrl);
-    
-    try {
-        webSocket = new WebSocket(wsUrl);
-        
-        webSocket.onopen = function() {
-            console.log("Conexión WebSocket establecida exitosamente");
-            webSocket.send(JSON.stringify(records));
-            deleteAllRecords();
-        };
-        
-        webSocket.onerror = function(error) {
-            console.error("Error en WebSocket:", error);
-            console.log("Usando HTTP como alternativa...");
-            sincronizarViaHTTP(records);
-        };
-        
-        webSocket.onclose = function(event) {
-            console.log("Conexión WebSocket cerrada. Código:", event.code, "Razón:", event.reason);
-            if (!event.wasClean) {
-                setTimeout(() => conectar(records), 5000);
-            }
-        };
-    } catch (e) {
-        console.error("Error al conectar WebSocket:", e);
-        sincronizarViaHTTP(records);
-    }
+    webSocket = new WebSocket("wss://" + location.hostname + ":" + location.port + "/encuesta/sincronizar");
+    webSocket.onopen = function() {
+        webSocket.send(JSON.stringify(records));
+        deleteAllRecords();
+    };
+    webSocket.onerror = function(error) {
+        console.log('WebSocket Error: ', error);
+    };
+    webSocket.onclose = function() {
+        console.log("Desconectado - status "+this.readyState);
+    };
 }
 
 function deleteAllRecords() {
@@ -204,7 +179,7 @@ function deleteAllRecords() {
     let request = objectStore.clear();
     request.onsuccess = function () {
         console.log('Todos los registros han sido borrados de la IndexedDB');
-        location.reload();
+        location.reload()
     };
     request.onerror = function () {
         console.log('Error al borrar los registros de la IndexedDB');
@@ -216,6 +191,6 @@ function verificarConexion(records){
         conectar(records);
     }
 }
-
 // Exponer la función displayRecords en el objeto window
 window.displayRecords = displayRecords;
+
