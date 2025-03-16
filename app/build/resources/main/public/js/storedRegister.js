@@ -162,26 +162,84 @@ function deleteRecord(id) {
 var webSocket;
 
 async function syncWithServer() {
-    let records = await getAllRecords();
-    console.log("Registros a sincronizar:", records);
-    
-    if (records && records.length > 0) {
-        verificarConexion(records);
-    } else {
-        console.log("No hay registros para sincronizar");
-        alert("No hay registros para sincronizar");
+    try {
+        let records = await getAllRecords();
+        console.log("Registros a sincronizar:", records);
+        
+        if (records && records.length > 0) {
+            // Determinar si estamos en localhost
+            const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+            
+            if (isLocalhost) {
+                // En desarrollo local, usar WebSocket
+                console.log("Usando sincronización WebSocket en desarrollo local");
+                verificarConexion(records);
+            } else {
+                // En producción, usar HTTP
+                console.log("Usando sincronización HTTP en producción");
+                sincronizarViaHTTP(records);
+            }
+        } else {
+            console.log("No hay registros para sincronizar");
+            alert("No hay registros para sincronizar");
+        }
+    } catch (error) {
+        console.error("Error al sincronizar:", error);
+        alert("Error al sincronizar: " + error.message);
     }
+}
+
+// Nueva función para sincronizar vía HTTP
+function sincronizarViaHTTP(records) {
+    // Mostrar mensaje de carga
+    alert("Iniciando sincronización de " + records.length + " registro(s)...");
+    
+    fetch('/encuesta/sincronizar-http', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(records)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error en la respuesta: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Respuesta del servidor:", data);
+        if (data.success) {
+            deleteAllRecords();
+            alert("Sincronización completada con éxito");
+        } else {
+            alert("Error en la sincronización: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error en sincronización HTTP:', error);
+        alert("Error en la sincronización. Detalles: " + error.message);
+    });
 }
 
 function conectar(records) {
     //Cambiado a wss
-    webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port + "/encuesta/sincronizar");
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = protocol + location.hostname + (location.port ? ':' + location.port : '') + "/encuesta/sincronizar";
+    
+    console.log("Intentando conectar a: " + wsUrl);
+    
+    webSocket = new WebSocket(wsUrl);
     webSocket.onopen = function() {
+        console.log("Conexión WebSocket establecida");
+        alert("Conectado al servidor, iniciando sincronización...");
         webSocket.send(JSON.stringify(records));
         deleteAllRecords();
     };
     webSocket.onerror = function(error) {
         console.log('WebSocket Error: ', error);
+        console.log('Intentando sincronización HTTP como alternativa...');
+        sincronizarViaHTTP(records);
     };
     webSocket.onclose = function() {
         console.log("Desconectado - status " + this.readyState);
