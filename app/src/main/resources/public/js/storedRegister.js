@@ -227,23 +227,35 @@ function conectar(records) {
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const wsUrl = protocol + location.hostname + (location.port ? ':' + location.port : '') + "/encuesta/sincronizar";
     
-    console.log("Intentando conectar a: " + wsUrl);
+    console.log("Protocolo detectado:", protocol);
+    console.log("Hostname:", location.hostname);
+    console.log("Puerto:", location.port);
+    console.log("Intentando conectar a WebSocket:", wsUrl);
     
-    webSocket = new WebSocket(wsUrl);
-    webSocket.onopen = function() {
-        console.log("Conexión WebSocket establecida");
-        alert("Conectado al servidor, iniciando sincronización...");
-        webSocket.send(JSON.stringify(records));
-        deleteAllRecords();
-    };
-    webSocket.onerror = function(error) {
-        console.log('WebSocket Error: ', error);
-        console.log('Intentando sincronización HTTP como alternativa...');
+    try {
+        webSocket = new WebSocket(wsUrl);
+        
+        webSocket.onopen = function() {
+            console.log("Conexión WebSocket establecida exitosamente");
+            alert("Conectado al servidor, iniciando sincronización...");
+            webSocket.send(JSON.stringify(records));
+            deleteAllRecords();
+        };
+        
+        webSocket.onerror = function(error) {
+            console.error('WebSocket Error:', error);
+            console.log('Intentando sincronización HTTP como alternativa...');
+            sincronizarViaHTTP(records);
+        };
+        
+        webSocket.onclose = function(event) {
+            console.log("Conexión WebSocket cerrada. Código:", event.code, "Razón:", event.reason, "Limpia:", event.wasClean);
+        };
+    } catch (e) {
+        console.error("Error al crear objeto WebSocket:", e);
+        alert("Error al crear la conexión WebSocket. Usando HTTP como alternativa.");
         sincronizarViaHTTP(records);
-    };
-    webSocket.onclose = function() {
-        console.log("Desconectado - status " + this.readyState);
-    };
+    }
 }
 
 function deleteAllRecords() {
