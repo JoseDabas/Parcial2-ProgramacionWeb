@@ -175,7 +175,7 @@ async function syncWithServer() {
 
 function conectar(records) {
     //Cambiado a wss
-    webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port + "/encuesta/sincronizar");
+    webSocket = new WebSocket("wss://" + location.hostname + ":" + location.port + "/encuesta/sincronizar");
     webSocket.onopen = function() {
         webSocket.send(JSON.stringify(records));
         deleteAllRecords();
@@ -208,4 +208,4 @@ function verificarConexion(records){
 }
 
 // Exponer la función displayRecords en el objeto window
-window.displayRecords = displayRecords;
+//window.displayRecords = displayRecords;
