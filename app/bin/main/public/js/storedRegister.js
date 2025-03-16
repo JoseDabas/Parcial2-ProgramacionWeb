@@ -208,5 +208,5 @@ function verificarConexion(records){
 }
 
 // Exponer la función displayRecords en el objeto window
-//window.displayRecords = displayRecords;
+window.displayRecords = displayRecords;
 
